@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>till差分</title>
+  <title>Till差分_先和Ivan一決勝負版</title>
   <style>
-    /* 基本頁面與中央對齊設定 */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -13,27 +12,22 @@
     }
 
     body {
+      position: relative; /* 讓絕對定位按鈕可以相對於整個畫面 */
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: center;
       min-height: 100vh;
       background-color: #f5f5f7;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       padding: 20px;
     }
 
-    h1 {
-      font-size: 20px;
-      color: #333;
-      margin-bottom: 16px;
-    }
-
-    /* 角色舞台區域（圖層重疊核心） */
+    /* 角色舞台 */
     .character-stage {
       position: relative;
       width: 100%;
-      max-width: 360px; /* 適合手機螢幕寬度 */
+      max-width: 360px;
       aspect-ratio: 4 / 6;
       background-color: #ffffff;
       border-radius: 16px;
@@ -42,7 +36,6 @@
       margin-bottom: 20px;
     }
 
-    /* 所有重疊圖層的通用設定 */
     .layer {
       position: absolute;
       top: 0;
@@ -50,16 +43,36 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      pointer-events: none; /* 防止點擊圖片影響操作 */
-      transition: opacity 0.2s ease; /* 開關時的平滑淡入淡出 */
+      pointer-events: none;
+      transition: opacity 0.2s ease;
     }
 
-    /* 隱藏圖層用的 Class */
+    /* 位於整個手機畫面右上角 的 ibanny 提示按鈕 */
+    .ibanny-btn {
+      position: fixed; /* 改為 fixed，相對於手機螢幕視窗右上角 */
+      top: 35px;/*moto wa 16*/
+      right: 16px;
+      width: 48px;
+      height: 48px;
+      cursor: pointer;
+      z-index: 50; 
+      transition: transform 0.2s ease;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
+    }
+
+    .ibanny-btn:hover {
+      transform: scale(2.00);
+    }/*taapu sitano oogisa ga kawaru moto wa1.08*/
+
+    .ibanny-btn:active {
+      transform: scale(0.92);
+    }/*boyon~ suru*/
+
     .hidden {
       opacity: 0;
+      pointer-events: none;
     }
 
-    /* 控制按鈕區域（網格排列，兩兩一排） */
     .controls {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -68,7 +81,6 @@
       max-width: 360px;
     }
 
-    /* 按鈕基礎樣式 (OFF 狀態) */
     .btn {
       padding: 14px 12px;
       font-size: 15px;
@@ -81,72 +93,369 @@
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
       transition: all 0.2s ease;
       -webkit-tap-highlight-color: transparent;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      text-align: center;
     }
 
     .btn:active {
       transform: scale(0.96);
     }
 
-    /* ON 狀態的按鈕樣式 */
     .btn.active {
       background-color: #626161;
       color: #ffffff;
       border-color: #626161;
-      box-shadow: 0 4px 12px rgba(98, 97, 97, 0.3);
+      box-shadow: 0 4px 12px rgba(97, 97, 97, 0.3);
+    }/*moto wa 3b82f6 shadow wa59,130,246,0.3*/
+
+    .btn-rps {
+      background-color: #626161;
+      color: #ffffff;
+      border-color: #626161;
     }
+
+    .btn-rps:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }/*toumeidou motowa0.6*/
+
+    /* 全螢幕彈窗遮罩 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+      cursor: pointer;
+    }
+
+    .modal-overlay.hidden {
+      display: none;
+    }
+
+    .modal-box {
+      background-color: #ffffff;
+      padding: 24px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+      max-width: 300px;
+      width: 85%;
+      cursor: default;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #1e293b;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .modal-btn {
+      padding: 10px 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-again { background-color: #626161; color: white; }
+    .btn-giveup { background-color: #89d4c5; color: black; }
   </style>
 </head>
 <body>
 
-  <h1>till各差分on/off</h1>
+  <!-- 手機畫面右上角 ibanny 按鈕 (移至舞台外部) -->
+  <img src="ibanny.png" alt="ibanny 提示" class="ibanny-btn hidden" id="btn-ibanny" onclick="showIbannyHint()">
 
-  <!-- 角色舞台 (圖層順序由下到上) -->
+  <!-- 角色舞台 -->
   <div class="character-stage">
-    <!-- 1. 最底層：身體 (底圖，不可開關) -->
-    <img src="till.png" alt="body" class="layer" id="layer-body">
+    <!-- 身體層 -->
+    <img src="till.png" alt="身體" class="layer" id="layer-body">
+    
+    <!-- Ivan 角色與出拳圖片 -->
+    <img src="ivan.png" alt="Ivan" class="layer hidden" id="layer-ivan">
+    <img src="rock.png" alt="石頭" class="layer hidden" id="layer-rock">
+    <img src="paper.png" alt="布" class="layer hidden" id="layer-paper">
+    <img src="scissors.png" alt="剪刀" class="layer hidden" id="layer-scissors">
 
-    <!-- 2. 衣服層 -->
-    <img src="cloth.png" alt="cloth" class="layer" id="layer-cloth">
+    <!-- 換裝配件層 -->
+    <img src="cloth.png" alt="衣服" class="layer" id="layer-cloth">
+    <img src="choker.png" alt="項圈" class="layer" id="layer-choker">
+    <img src="necktie.png" alt="領帶" class="layer" id="layer-necktie">
+    <img src="hands.png" alt="手部" class="layer" id="layer-hands">
 
-    <!-- 3. 項圈層 -->
-    <img src="choker.png" alt="chocker" class="layer" id="layer-choker">
-
-    <!-- 4. 領帶層 -->
-    <img src="necktie.png" alt="necktie" class="layer" id="layer-necktie">
-
-    <!-- 5. 最上層：手部動作 -->
-    <img src="hands.png" alt="hands" class="layer" id="layer-hands">
+    <!-- 玩家猜拳圖層 (置於最上方) -->
+    <img src="rock_hand.png" alt="玩家石頭" class="layer hidden" id="layer-player-rock">
+    <img src="scissors_hand.png" alt="玩家剪刀" class="layer hidden" id="layer-player-scissors">
+    <img src="paper_hand.png" alt="玩家布" class="layer hidden" id="layer-player-paper">
   </div>
 
-  <!-- 下方 4 個 ON/OFF 開關按鈕 -->
-  <div class="controls">
-    <button class="btn active" id="btn-cloth" onclick="toggleLayer('cloth', 'CLOTH')">CLOTH / ON</button>
-    <button class="btn active" id="btn-choker" onclick="toggleLayer('choker', 'CHOKER')">CHOKER / ON</button>
-    <button class="btn active" id="btn-necktie" onclick="toggleLayer('necktie', 'NECKTIE')">NECKTIE / ON</button>
-    <button class="btn active" id="btn-hands" onclick="toggleLayer('hands', 'HANDS')">HANDS / ON</button>
+  <!-- 控制按鈕區 -->
+  <div class="controls" id="controls-box">
+    <button class="btn active" id="btn-cloth" onclick="toggleLayer('cloth', '衣服')">衣服：穿上</button>
+    <button class="btn active" id="btn-choker" onclick="toggleLayer('choker', '項圈')">項圈：穿上</button>
+    <button class="btn active" id="btn-necktie" onclick="toggleLayer('necktie', '領帶')">領帶：穿上</button>
+    <button class="btn active" id="btn-hands" onclick="toggleLayer('hands', '手手')">手手</button>
+  </div>
+
+  <!-- 提示框 / 結果彈窗 -->
+  <div class="modal-overlay hidden" id="modal-overlay" onclick="closeModalFromOverlay()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-title" id="modal-text">怎麼可以！想讓Till一絲不掛，要先和Ivan用猜拳一決勝負！</div>
+      <div class="modal-buttons hidden" id="modal-buttons">
+        <button class="modal-btn btn-again" onclick="restartRPS()">再一次</button>
+        <button class="modal-btn btn-giveup" onclick="giveUpRPS()">放棄</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    // 通用 ON/OFF 切換函數
-    function toggleLayer(layerId, labelName) {
-      const layer = document.getElementById(`layer-${layerId}`);
-      const button = document.getElementById(`btn-${layerId}`);
+    
+    const accessoryState = {
+      cloth: true,
+      choker: true,
+      necktie: true,
+      hands: true
+    };
 
-      // 切換 hidden 類別 (隱藏/顯示)
-      const isHidden = layer.classList.toggle('hidden');
+    let hasWonRPS = false; 
+    let rpsCount = 0; 
+    let isResultModal = false; // 標記當前彈窗是否為勝負結果 (Win/Tie/Lose)
+    let isFirstIbannyClick = true; 
+    
+function toggleLayer(layerId, labelName) {
+  const layer = document.getElementById(`layer-${layerId}`);
+  const button = document.getElementById(`btn-${layerId}`);
 
-      if (isHidden) {
-        // 變為 OFF 狀態
-        button.classList.remove('active');
-        button.textContent = `${labelName} / OFF`;
-      } else {
-        // 變為 ON 狀態
-        button.classList.add('active');
-        button.textContent = `${labelName} / ON`;
+  accessoryState[layerId] = !accessoryState[layerId];
+
+  const displayText = (layerId === 'hands') 
+    ? '手手' 
+    : `${labelName}：${accessoryState[layerId] ? '穿上' : '脫掉'}`;
+
+  if (!accessoryState[layerId]) {
+    layer.classList.add('hidden');
+    button.classList.remove('active');
+  } else {
+    layer.classList.remove('hidden');
+    button.classList.add('active');
+  }
+
+  button.textContent = displayText;
+
+  const activeCount = Object.values(accessoryState).filter(val => val === true).length;
+  
+  if (activeCount === 0 && !hasWonRPS) {
+    startRPSGame();
+  }
+}
+
+    function startRPSGame() {
+      document.getElementById('layer-body').classList.add('hidden');
+      document.getElementById('layer-ivan').classList.remove('hidden');
+
+      hideRPSImages();
+
+      const controlsBox = document.getElementById('controls-box');
+      controlsBox.style.gridTemplateColumns = "repeat(3, 1fr)";
+      controlsBox.innerHTML = `
+        <button class="btn btn-rps" onclick="playRPS('Rock')">出石頭</button>
+        <button class="btn btn-rps" onclick="playRPS('Scissors')">出剪刀</button>
+        <button class="btn btn-rps" onclick="playRPS('Paper')">出布</button>
+      `;
+
+      showModal("怎麼可以！想讓Till一絲不掛，要先和Ivan用猜拳一決勝負！！", false, false);
+    }
+
+    function playRPS(playerChoice) {
+      hideRPSImages();
+      disableRPSButtons(true);
+
+      // 顯示玩家選擇的出拳圖片，並於 1 秒後隱藏
+      if (playerChoice === 'Rock') {
+        const playerLayer = document.getElementById('layer-player-rock');
+        playerLayer.classList.remove('hidden');
+        setTimeout(() => playerLayer.classList.add('hidden'), 1000);
+      } else if (playerChoice === 'Scissors') {
+        const playerLayer = document.getElementById('layer-player-scissors');
+        playerLayer.classList.remove('hidden');
+        setTimeout(() => playerLayer.classList.add('hidden'), 1000);
+      } else if (playerChoice === 'Paper') {
+        const playerLayer = document.getElementById('layer-player-paper');
+        playerLayer.classList.remove('hidden');
+        setTimeout(() => playerLayer.classList.add('hidden'), 1000);
       }
+
+      rpsCount++;
+
+      // 1 秒後 Ivan 出拳並進行勝負判定
+      setTimeout(() => {
+        if (rpsCount > 4 && !hasWonRPS) {
+          document.getElementById('btn-ibanny').classList.remove('hidden');
+        }
+
+        if (playerChoice === 'Rock') {
+          document.getElementById('layer-paper').classList.remove('hidden');
+          setTimeout(() => {
+            showModal("輸了...", true, true);
+          }, 1500);
+
+        } else if (playerChoice === 'Scissors') {
+          document.getElementById('layer-scissors').classList.remove('hidden');
+          setTimeout(() => {
+            showModal("平手！", true, true);
+          }, 1500);
+
+        } else if (playerChoice === 'Paper') {
+          const rand = Math.random();
+
+          if (rand < 0.10) {
+            // 10% Win
+            document.getElementById('layer-rock').classList.remove('hidden');
+            hasWonRPS = true;
+
+            setTimeout(() => {
+              showModal("贏了！\n恭喜你打倒Ivan！現在沒人能阻止你了。", false, true);
+              
+              setTimeout(() => {
+                hideModal();
+                resetToInitialState();
+              }, 2500);
+            }, 1500);
+
+          } else if (rand < 0.60) {
+            // 50% Tie
+            document.getElementById('layer-paper').classList.remove('hidden');
+            setTimeout(() => {
+              showModal("平手！", true, true);
+            }, 1500);
+
+          } else {
+            // 40% Lose
+            document.getElementById('layer-scissors').classList.remove('hidden');
+            setTimeout(() => {
+              showModal("輸了...", true, true);
+            }, 1500);
+          }
+        }
+      }, 1000);
+    }
+
+    function showIbannyHint() {
+  let message = "";
+
+  if (isFirstIbannyClick) {
+    // 首次點擊固定顯示攻略提示
+    message = "贏不了嗎？ibanny偷偷告訴你，出布比較容易贏這傢伙……";
+    isFirstIbannyClick = false; // 標記已非首次點擊
+  } else {
+    // 非首次點擊，依照機率顯示不同對話
+    const rand = Math.random(); // 產生 0 ~ 1 之間的隨機數
+
+    if (rand < 0.40) {
+      // 40% 機率 (0.00 ~ 0.3999...)
+      message = "ibanny討厭Ivan，他總是對Till毛手毛腳……";
+    } else if (rand < 0.70) {
+      // 30% 機率 (0.40 ~ 0.6999...)
+      message = "ibanny喜歡Till，他唱歌很好聽，還對ibanny很好，Till是ibanny的宇宙。";
+    } else {
+      // 30% 機率 (0.70 ~ 0.9999...)
+      message = "贏不了嗎？ibanny偷偷告訴你，出布比較容易贏這傢伙……";
+    }
+  }
+
+  // 提示訊息非勝負結果彈窗，點擊空白處可關閉
+  showModal(message, false, false);
+}
+
+    function closeModalFromOverlay() {
+      if (!isResultModal) {
+        hideModal();
+      }
+    }
+
+    function restartRPS() {
+      hideModal();
+      hideRPSImages();
+      disableRPSButtons(false);
+      document.getElementById('layer-ivan').classList.remove('hidden');
+    }
+
+    function giveUpRPS() {
+      hideModal();
+      resetToInitialState();
+    }
+
+    function resetToInitialState() {
+      isFirstIbannyClick = true;
+      document.getElementById('layer-body').classList.remove('hidden');
+      document.getElementById('layer-ivan').classList.add('hidden');
+      
+      document.getElementById('btn-ibanny').classList.add('hidden');
+      rpsCount = 0;
+
+      hideRPSImages();
+
+      const layers = ['cloth', 'choker', 'necktie', 'hands'];
+      layers.forEach(id => {
+        accessoryState[id] = true;
+        document.getElementById(`layer-${id}`).classList.remove('hidden');
+      });
+
+      const controlsBox = document.getElementById('controls-box');
+      controlsBox.style.gridTemplateColumns = "repeat(2, 1fr)";
+      controlsBox.innerHTML = `
+        <button class="btn active" id="btn-cloth" onclick="toggleLayer('cloth', '衣服')">衣服：穿上</button>
+        <button class="btn active" id="btn-choker" onclick="toggleLayer('choker', '項圈')">項圈：穿上</button>
+        <button class="btn active" id="btn-necktie" onclick="toggleLayer('necktie', '領帶')">領帶：穿上</button>
+        <button class="btn active" id="btn-hands" onclick="toggleLayer('hands', '手手')">手手</button>
+      `;
+    }
+
+    function hideRPSImages() {
+      document.getElementById('layer-rock').classList.add('hidden');
+      document.getElementById('layer-paper').classList.add('hidden');
+      document.getElementById('layer-scissors').classList.add('hidden');
+      document.getElementById('layer-player-rock').classList.add('hidden');
+      document.getElementById('layer-player-scissors').classList.add('hidden');
+      document.getElementById('layer-player-paper').classList.add('hidden');
+    }
+
+    function disableRPSButtons(disabled) {
+      const rpsBtns = document.querySelectorAll('.btn-rps');
+      rpsBtns.forEach(btn => btn.disabled = disabled);
+    }
+
+    function showModal(text, showButtons, isResult = false) {
+      isResultModal = isResult;
+      document.getElementById('modal-text').innerText = text;
+      const modalButtons = document.getElementById('modal-buttons');
+      
+      if (showButtons) {
+        modalButtons.classList.remove('hidden');
+      } else {
+        modalButtons.classList.add('hidden');
+      }
+      
+      document.getElementById('modal-overlay').classList.remove('hidden');
+    }
+
+    function hideModal() {
+      isResultModal = false;
+      document.getElementById('modal-overlay').classList.add('hidden');
     }
   </script>
 
